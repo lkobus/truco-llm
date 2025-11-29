@@ -1,0 +1,145 @@
+{
+  "examples": [
+    {
+      "description": "Partida com todos jogadores Random",
+      "request": {
+        "matchId": "match-001",
+        "teamA": [
+          {
+            "id": 1,
+            "name": "Random Player 1",
+            "type": "RandomCardPlayer"
+          },
+          {
+            "id": 3,
+            "name": "Random Player 3",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "teamB": [
+          {
+            "id": 2,
+            "name": "Random Player 2",
+            "type": "RandomCardPlayer"
+          },
+          {
+            "id": 4,
+            "name": "Random Player 4",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "startRoundPlayer": 1
+      }
+    },
+    {
+      "description": "Partida com jogador LLM no Time A",
+      "request": {
+        "matchId": "match-002",
+        "teamA": [
+          {
+            "id": 1,
+            "name": "AI Strategic",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          },
+          {
+            "id": 3,
+            "name": "Random Joe",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "teamB": [
+          {
+            "id": 2,
+            "name": "Random Alice",
+            "type": "RandomCardPlayer"
+          },
+          {
+            "id": 4,
+            "name": "Random Bob",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "startRoundPlayer": 1
+      }
+    },
+    {
+      "description": "Partida com 2 jogadores LLM (um em cada time)",
+      "request": {
+        "matchId": "match-003",
+        "teamA": [
+          {
+            "id": 1,
+            "name": "AI Master",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          },
+          {
+            "id": 3,
+            "name": "Random Partner",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "teamB": [
+          {
+            "id": 2,
+            "name": "AI Pro",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          },
+          {
+            "id": 4,
+            "name": "Random Backup",
+            "type": "RandomCardPlayer"
+          }
+        ],
+        "startRoundPlayer": 1
+      }
+    },
+    {
+      "description": "Partida com todos jogadores LLM",
+      "request": {
+        "matchId": "match-004",
+        "teamA": [
+          {
+            "id": 1,
+            "name": "AI Alpha",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          },
+          {
+            "id": 3,
+            "name": "AI Gamma",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          }
+        ],
+        "teamB": [
+          {
+            "id": 2,
+            "name": "AI Beta",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          },
+          {
+            "id": 4,
+            "name": "AI Delta",
+            "type": "LLMPlayer",
+            "apiKey": "sk-YOUR_OPENAI_API_KEY_HERE"
+          }
+        ],
+        "startRoundPlayer": 1
+      }
+    }
+  ],
+  "usage": {
+    "endpoint": "POST /api/commands/start-match",
+    "notes": [
+      "O campo 'type' aceita: 'RandomCardPlayer' ou 'LLMPlayer'",
+      "Para LLMPlayer, o campo 'apiKey' é obrigatório",
+      "Substitua 'sk-YOUR_OPENAI_API_KEY_HERE' pela sua chave real da OpenAI",
+      "O LLMPlayer usa o modelo gpt-4o-mini para tomar decisões estratégicas",
+      "Você pode misturar diferentes tipos de jogadores na mesma partida"
+    ]
+  }
+}

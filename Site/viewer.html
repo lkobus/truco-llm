@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Truco Game Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .match-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .match-input {
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #fff;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            min-width: 300px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-load {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #45a049;
+        }
+
+        .btn-stop {
+            background: #f44336;
+            color: white;
+        }
+
+        .error-message {
+            background: #f44336;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .team-score {
+            text-align: center;
+        }
+
+        .team-score h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .score-display {
+            font-size: 3em;
+            font-weight: bold;
+        }
+
+        .turn-score {
+            font-size: 0.5em;
+            opacity: 0.7;
+        }
+
+        .reward-display {
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .state-badge {
+            background: #4CAF50;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        .game-table {
+            position: relative;
+            background: rgba(34, 139, 34, 0.8);
+            border-radius: 50%;
+            width: 800px;
+            height: 800px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .player-position {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .player-position.top {
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.right {
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .player-position.bottom {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.left {
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .player-position.current {
+            border: 2px solid gold;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .player-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .action-bubble {
+            position: absolute;
+            background: rgba(255, 215, 0, 0.95);
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            white-space: nowrap;
+            animation: bubbleAppear 0.3s ease-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .comment-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-style: italic;
+            white-space: nowrap;
+            animation: bubbleAppear 0.3s ease-out;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            z-index: 99;
+        }
+
+        .action-bubble.truco {
+            background: rgba(255, 69, 0, 0.95);
+            color: white;
+        }
+
+        .action-bubble.accept {
+            background: rgba(76, 175, 80, 0.95);
+            color: white;
+        }
+
+        .action-bubble.decline {
+            background: rgba(244, 67, 54, 0.95);
+            color: white;
+        }
+
+        .action-bubble.play-card {
+            background: rgba(33, 150, 243, 0.95);
+            color: white;
+        }
+
+        .player-position.top .action-bubble {
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.top .comment-bubble {
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.right .action-bubble {
+            right: -120px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .player-position.right .comment-bubble {
+            right: -120px;
+            top: calc(50% - 40px);
+            transform: translateY(-50%);
+        }
+
+        .player-position.bottom .action-bubble {
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.bottom .comment-bubble {
+            bottom: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .player-position.left .action-bubble {
+            left: -120px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .player-position.left .comment-bubble {
+            left: -120px;
+            top: calc(50% - 40px);
+            transform: translateY(-50%);
+        }
+
+        @keyframes bubbleAppear {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
+        }
+
+        .player-position.right .action-bubble,
+        .player-position.left .action-bubble {
+            animation: bubbleAppearSide 0.3s ease-out;
+        }
+
+        @keyframes bubbleAppearSide {
+            0% {
+                opacity: 0;
+                transform: translateY(-50%) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(-50%) scale(1);
+            }
+        }
+
+        .action-bubble.fade-out {
+            animation: bubbleFadeOut 0.3s ease-out forwards;
+        }
+
+        .comment-bubble.fade-out {
+            animation: bubbleFadeOut 0.3s ease-out forwards;
+        }
+
+        @keyframes bubbleFadeOut {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+        }
+
+        .cards {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            width: 60px;
+            height: auto;
+        }
+
+        .card img {
+            width: 100%;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .center-area {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .manilha-container {
+            margin-bottom: 20px;
+        }
+
+        .manilha-label {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .manilha-card {
+            width: 90px;
+        }
+
+        .played-cards-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        .played-card {
+            position: absolute;
+            width: 90px;
+        }
+
+        .played-card.pos-top {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .played-card.pos-right {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .played-card.pos-bottom {
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .played-card.pos-left {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .round-info {
+            text-align: center;
+            margin-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        #loading {
+            text-align: center;
+            font-size: 1.5em;
+            padding: 40px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .round-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .round-transition-content {
+            text-align: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+
+        .round-transition h2 {
+            font-size: 4em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        }
+
+        .round-transition .winner-text {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .round-transition .score-text {
+            font-size: 2em;
+            opacity: 0.9;
+        }
+
+        .round-transition.team-a .winner-text {
+            color: #4CAF50;
+            text-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
+        }
+
+        .round-transition.team-b .winner-text {
+            color: #2196F3;
+            text-shadow: 0 0 30px rgba(33, 150, 243, 0.8);
+        }
+
+        .round-transition.draw .winner-text {
+            color: #FFC107;
+            text-shadow: 0 0 30px rgba(255, 193, 7, 0.8);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+
+        @keyframes flyOut {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--fly-x), var(--fly-y)) scale(0.3) rotate(360deg);
+            }
+        }
+
+        .played-card.fly-out {
+            animation: flyOut 0.8s ease-in forwards;
+        }
+
+        .played-card.fly-out.pos-top {
+            --fly-x: 0;
+            --fly-y: -500px;
+        }
+
+        .played-card.fly-out.pos-right {
+            --fly-x: 500px;
+            --fly-y: 0;
+        }
+
+        .played-card.fly-out.pos-bottom {
+            --fly-x: 0;
+            --fly-y: 500px;
+        }
+
+        .played-card.fly-out.pos-left {
+            --fly-x: -500px;
+            --fly-y: 0;
+        }
+
+        .game-over-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .game-over-content {
+            text-align: center;
+            animation: scaleIn 0.8s ease-out;
+            padding: 60px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-over-content h1 {
+            font-size: 4em;
+            margin-bottom: 40px;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+
+        .winner-announcement {
+            margin: 40px 0;
+        }
+
+        .winner-announcement .winner-text {
+            font-size: 5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .game-over-content.team-a .winner-text {
+            color: #4CAF50;
+            text-shadow: 0 0 40px rgba(76, 175, 80, 0.9);
+        }
+
+        .game-over-content.team-b .winner-text {
+            color: #2196F3;
+            text-shadow: 0 0 40px rgba(33, 150, 243, 0.9);
+        }
+
+        .final-score {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 40px 0;
+            font-size: 3em;
+        }
+
+        .final-score-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .final-score .team-label {
+            font-size: 0.5em;
+            opacity: 0.7;
+        }
+
+        .final-score .score-value {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .final-score .score-value.winner-score {
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        .final-score-divider {
+            opacity: 0.5;
+        }
+
+        .game-over-actions {
+            margin-top: 60px;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            font-size: 1.5em;
+            padding: 20px 50px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🃏 Truco Game Viewer</h1>
+            <div class="match-selector">
+                <input 
+                    type="text" 
+                    id="matchIdInput" 
+                    class="match-input" 
+                    placeholder="Digite o Match ID"
+                />
+                <button onclick="loadMatch()" class="btn btn-load">Carregar Partida</button>
+                <button id="stopBtn" onclick="stopPolling()" class="btn btn-stop hidden">Parar</button>
+            </div>
+        </div>
+
+        <div id="error" class="error-message hidden"></div>
+        <div id="loading" class="hidden">Carregando...</div>
+
+        <div id="gameContent" class="hidden">
+            <!-- Placar -->
+            <div class="scoreboard">
+                <div class="team-score">
+                    <h3>Time A</h3>
+                    <div class="score-display">
+                        <span id="scoreTeamA">0</span>
+                        <span class="turn-score">(<span id="turnScoreTeamA">0</span>)</span>
+                    </div>
+                </div>
+                <div class="reward-display">
+                    <div>Recompensa: <span id="reward">1</span></div>
+                    <div class="state-badge" id="state">WAITING</div>
+                </div>
+                <div class="team-score">
+                    <h3>Time B</h3>
+                    <div class="score-display">
+                        <span id="scoreTeamB">0</span>
+                        <span class="turn-score">(<span id="turnScoreTeamB">0</span>)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mesa de jogo -->
+            <div class="game-table">
+                <!-- Player 0 (Topo) -->
+                <div id="player0" class="player-position top"></div>
+
+                <!-- Player 3 (Esquerda) -->
+                <div id="player3" class="player-position left"></div>
+
+                <!-- Centro -->
+                <div class="center-area">
+                    <div class="manilha-container">
+                        <div class="manilha-label">Manilha</div>
+                        <div id="manilha"></div>
+                    </div>
+                    <div id="playedCards" class="played-cards-container"></div>
+                </div>
+
+                <!-- Player 1 (Direita) -->
+                <div id="player1" class="player-position right"></div>
+
+                <!-- Player 2 (Baixo) -->
+                <div id="player2" class="player-position bottom"></div>
+            </div>
+
+            <!-- Info -->
+            <div class="round-info">
+                <p>Turno: <span id="currentTurn">0</span></p>
+                <p id="currentPlayerInfo"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5002/api';
+        let pollingInterval = null;
+        let commentsPollingInterval = null;
+        let currentMatchId = null;
+        let lastPlayedCards = [];
+        let lastState = null;
+        let lastReward = 1;
+        let lastTurnScoreA = 0;
+        let lastTurnScoreB = 0;
+        let lastTurn = 0;
+        let showingTransition = false;
+        let gameFinished = false;
+
+        // Sistema de sons
+        const sounds = {
+            cardPlayed: new Audio('assets/card_played.mp3'),
+            cardBackPlay: new Audio('assets/card_back_play.mp3'),
+            cardShuffle: new Audio('assets/card-shuffle.mp3'),
+            trucoCall: new Audio('assets/truco_call.mp3'),
+            raise6: new Audio('assets/raise_6.mp3'),
+            raise9: new Audio('assets/raise_9.mp3'),
+            raise12: new Audio('assets/raise_12.mp3'),
+            trucoDecline: new Audio('assets/truco_decline.mp3'),
+            winA: new Audio('assets/win-sound-A.mp3'),
+            winB: new Audio('assets/win-sound-B.mp3')
+        };
+
+        function playSound(sound) {
+            try {
+                sound.currentTime = 0;
+                sound.play().catch(err => console.log('Erro ao tocar som:', err));
+            } catch (err) {
+                console.log('Erro ao tocar som:', err);
+            }
+        }
+
+        // Mapeamento de ranks
+        const RANK_MAP = {
+            1: '04', 2: '05', 3: '06', 4: '07',
+            5: 'Q', 6: 'J', 7: 'K', 8: 'A',
+            9: '02', 10: '03'
+        };
+
+        const SUIT_MAP = {
+            'Hearts': 'hearts',
+            'Diamonds': 'diamonds',
+            'Clubs': 'clubs',
+            'Spades': 'spades'
+        };
+
+        function getCardImagePath(card) {
+            if (card.hide) {
+                return 'assets/card_back.png';
+            }
+            const suit = SUIT_MAP[card.suit] || 'hearts';
+            const rank = RANK_MAP[card.rank];
+            if (!rank) {
+                console.error('Rank inválido:', card.rank, card);
+                return 'assets/card_back.png';
+            }
+            return `assets/card_${suit}_${rank}.png`;
+        }
+
+        function createCardElement(card, cssClass = '') {
+            const img = document.createElement('img');
+            img.src = getCardImagePath(card);
+            img.alt = card.name;
+            img.className = cssClass;
+            img.onerror = function() {
+                console.error('Erro ao carregar:', this.src);
+                this.src = 'assets/card_back.png';
+            };
+            return img;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => errorDiv.classList.add('hidden'), 5000);
+        }
+
+        function showRoundTransition(winnerTeam, scoreA, scoreB, pointsWon, rewardValue) {
+            if (showingTransition) return;
+            showingTransition = true;
+
+            console.log('🎉 Mostrando transição de rodada:', winnerTeam);
+
+            // Toca som de vitória
+            if (winnerTeam === 'team-a') {
+                playSound(sounds.winA);
+            } else if (winnerTeam === 'team-b') {
+                playSound(sounds.winB);
+            }
+
+            // Anima cartas saindo da mesa
+            animateCardsOut();
+
+            // Aguarda as cartas saírem antes de mostrar a transição
+            setTimeout(() => {
+                const transition = document.createElement('div');
+                transition.className = `round-transition ${winnerTeam}`;
+                
+                const content = document.createElement('div');
+                content.className = 'round-transition-content';
+                
+                let winnerText = '';
+                if (winnerTeam === 'draw') {
+                    winnerText = 'RODADA EMPATADA! 🤝';
+                } else if (winnerTeam === 'team-a') {
+                    winnerText = 'TIME A VENCEU A RODADA! 🎉';
+                } else {
+                    winnerText = 'TIME B VENCEU A RODADA! 🎉';
+                }
+                
+                content.innerHTML = `
+                    <h2>Rodada Finalizada!</h2>
+                    <div class="winner-text">${winnerText}</div>
+                    <div class="score-text">Valor da Rodada: ${rewardValue} ponto${rewardValue > 1 ? 's' : ''}</div>
+                    <div class="score-text">Placar Geral: ${scoreA} x ${scoreB}</div>
+                `;
+                
+                transition.appendChild(content);
+                document.body.appendChild(transition);
+                
+                setTimeout(() => {
+                    transition.style.animation = 'fadeOut 0.5s ease-out';
+                    setTimeout(() => {
+                        transition.remove();
+                        showingTransition = false;
+                    }, 500);
+                }, 2500);
+            }, 1000);
+        }
+
+        function showActionBubble(playerId, action, actionType = '') {
+            const player = document.querySelector(`[data-player-id="${playerId}"]`);
+            if (!player) return;
+
+            // Remove bolha anterior se existir
+            const oldBubble = player.querySelector('.action-bubble');
+            if (oldBubble) {
+                oldBubble.classList.add('fade-out');
+                setTimeout(() => oldBubble.remove(), 300);
+            }
+
+            // Cria nova bolha
+            const bubble = document.createElement('div');
+            bubble.className = `action-bubble ${actionType}`;
+            bubble.textContent = action;
+            bubble.dataset.timestamp = Date.now();
+            player.appendChild(bubble);
+
+            // Remove após 3 segundos com fade-out
+            setTimeout(() => {
+                if (bubble.parentNode) {
+                    bubble.classList.add('fade-out');
+                    setTimeout(() => bubble.remove(), 300);
+                }
+            }, 3000);
+        }
+
+        function showCommentBubble(playerId, comment) {
+            if (!comment || comment === '...') return;
+            
+            const player = document.querySelector(`[data-player-id="${playerId}"]`);
+            if (!player) return;
+
+            // Remove comentário anterior se existir
+            const oldComment = player.querySelector('.comment-bubble');
+            if (oldComment) {
+                oldComment.classList.add('fade-out');
+                setTimeout(() => oldComment.remove(), 300);
+            }
+
+            // Cria nova bolha de comentário
+            const bubble = document.createElement('div');
+            bubble.className = 'comment-bubble';
+            bubble.textContent = `"${comment}"`;
+            bubble.dataset.timestamp = Date.now();
+            player.appendChild(bubble);
+
+            // Remove após 4 segundos com fade-out
+            setTimeout(() => {
+                if (bubble.parentNode) {
+                    bubble.classList.add('fade-out');
+                    setTimeout(() => bubble.remove(), 300);
+                }
+            }, 4000);
+        }
+
+        function detectActions(state) {
+            if (!lastState) {
+                lastState = state;
+                lastReward = state.currentReward;
+                lastPlayedCards = state.playedCards.map(pc => pc.playerId);
+                lastTurnScoreA = state.turnScoreTeamA;
+                lastTurnScoreB = state.turnScoreTeamB;
+                lastTurn = state.currentTurn;
+                return;
+            }
+
+            // Detecta fim de rodada: turno volta para 0 E tinha cartas jogadas
+            if (lastTurn > 0 && state.currentTurn === 0 && lastPlayedCards.length > 0) {
+                console.log('🎴 Fim de rodada detectado! Animando cartas...');
+                
+                playSound(sounds.cardShuffle);
+                
+                const turnScoreAChanged = state.turnScoreTeamA > lastTurnScoreA;
+                const turnScoreBChanged = state.turnScoreTeamB > lastTurnScoreB;
+                
+                // Determina o vencedor DA RODADA baseado em quem pontuou o turnScore
+                let winnerTeam = 'draw';
+                let pointsWon = 0;
+                
+                if (turnScoreAChanged && turnScoreBChanged) {
+                    // Ambos times pontuaram = empate da rodada
+                    winnerTeam = 'draw';
+                    pointsWon = 1;
+                } else if (turnScoreAChanged) {
+                    // Time A ganhou a rodada
+                    winnerTeam = 'team-a';
+                    pointsWon = 1;
+                } else if (turnScoreBChanged) {
+                    // Time B ganhou a rodada
+                    winnerTeam = 'team-b';
+                    pointsWon = 1;
+                }
+                
+                // Sempre mostra transição quando há fim de rodada
+                showRoundTransition(winnerTeam, state.matchScoreTeamA, state.matchScoreTeamB, pointsWon, lastReward);
+                
+                lastTurnScoreA = state.turnScoreTeamA;
+                lastTurnScoreB = state.turnScoreTeamB;
+            }
+
+            // Detecta cartas jogadas
+            const currentPlayedCardIds = state.playedCards.map(pc => pc.playerId);
+            const newCards = currentPlayedCardIds.filter(id => !lastPlayedCards.includes(id));
+            
+            newCards.forEach(playerId => {
+                const played = state.playedCards.find(pc => pc.playerId === playerId);
+                if (played) {
+                    playSound(sounds.cardPlayed);
+                    showActionBubble(playerId, `Jogou ${played.card.name}`, 'play-card');
+                }
+            });
+
+            // Detecta pedido de TRUCO (mudança de estado para TRUCO)
+            if (lastState.state !== 'TRUCO' && state.state === 'TRUCO') {
+                playSound(sounds.trucoCall);
+                // Quem pediu TRUCO é o currentPlayerId do estado ANTERIOR (lastState)
+                // porque após pedir TRUCO, o turno passa para o próximo jogador
+                const trucoCallerId = lastState.currentPlayerId;
+                if (trucoCallerId) {
+                    showActionBubble(trucoCallerId, 'TRUCO! 🔥', 'truco');
+                }
+            }
+
+            // Detecta RECUSOU usando o estado DECLINE (só detecta uma vez na transição)
+            if (lastState.state === 'TRUCO' && state.state === 'DECLINE') {
+                console.log('🚫 DECLINE detectado!');
+                console.log('Estado atual:', state.state);
+                console.log('Estado anterior:', lastState.state);
+                console.log('CurrentPlayerId atual:', state.currentPlayerId);
+                console.log('CurrentPlayerId anterior:', lastState.currentPlayerId);
+                
+                playSound(sounds.trucoDecline);
+                
+                // Quem recusou é o currentPlayerId do lastState (que estava respondendo ao truco)
+                const declinerId = lastState.currentPlayerId;
+                console.log('Decliner ID:', declinerId);
+                
+                if (declinerId) {
+                    showActionBubble(declinerId, 'Recusou! ❌', 'decline');
+                }
+            }
+
+            // Detecta ACEITOU o truco (reward aumentou e estado mudou de TRUCO para TRUCO_ACCEPTED ou outro)
+            if (lastState.state === 'TRUCO' && state.state !== 'TRUCO' && state.state !== 'DECLINE' && state.currentReward > lastReward) {
+                // Quem aceitou é o jogador anterior (que acabou de responder)
+                const accepterId = getPreviousPlayer(state);
+                if (accepterId) {
+                    const rewardNames = {
+                        3: 'Aceitou TRUCO! ✅',   // aceitou 1->3
+                        6: 'Aceitou SEIS! ✅',   // aceitou 3->6
+                        9: 'Aceitou NOVE! ✅',   // aceitou 6->9
+                        12: 'Aceitou DOZE! ✅'   // aceitou 9->12
+                    };
+                    const message = rewardNames[state.currentReward] || 'Aceitou! ✅';
+                    showActionBubble(accepterId, message, 'accept');
+                }
+            }
+
+            // Detecta AUMENTOU a aposta (raise) - ainda está em TRUCO mas reward aumentou
+            // reward: 1 -> 3(truco) -> 6(seis) -> 9(nove) -> 12(doze)
+            if (lastState.state === 'TRUCO' && state.state === 'TRUCO' && state.currentReward > lastReward) {
+                // Mapeia baseado na TRANSIÇÃO (lastReward -> currentReward)
+                let soundToPlay = sounds.trucoCall;
+                let message = 'Aumentou! 🔥';
+                
+                if (lastReward === 3 && state.currentReward === 6) {
+                    soundToPlay = sounds.raise6;
+                    message = 'SEIS! 🔥🔥';
+                } else if (lastReward === 6 && state.currentReward === 9) {
+                    soundToPlay = sounds.raise9;
+                    message = 'NOVE! 🔥🔥🔥';
+                } else if (lastReward === 9 && state.currentReward === 12) {
+                    soundToPlay = sounds.raise12;
+                    message = 'DOZE! 🔥🔥🔥🔥';
+                }
+                
+                playSound(soundToPlay);
+                
+                // Quem aumentou é o currentPlayerId do estado ANTERIOR
+                const raiserId = lastState.currentPlayerId;
+                if (raiserId) {
+                    showActionBubble(raiserId, message, 'truco');
+                }
+            }
+
+            lastPlayedCards = currentPlayedCardIds;
+            lastState = JSON.parse(JSON.stringify(state)); // Deep clone
+            lastReward = state.currentReward;
+            lastTurn = state.currentTurn;
+        }
+
+        function animateCardsOut() {
+            console.log('🎴 Animando cartas para fora...');
+            const playedCardsDiv = document.getElementById('playedCards');
+            const cards = playedCardsDiv.querySelectorAll('.played-card');
+            
+            if (cards.length === 0) {
+                showingTransition = false;
+                return;
+            }
+            
+            showingTransition = true; // Marca que está em transição para evitar re-render
+            
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('fly-out');
+                }, index * 100);
+            });
+            
+            // Limpa o DOM imediatamente para evitar re-render
+            setTimeout(() => {
+                playedCardsDiv.innerHTML = '';
+            }, 50);
+        }
+
+        function getPreviousPlayer(state) {
+            const playerIds = state.players.map(p => p.id);
+            const currentIndex = playerIds.indexOf(state.currentPlayerId);
+            if (currentIndex > 0) {
+                return playerIds[currentIndex - 1];
+            }
+            return playerIds[playerIds.length - 1];
+        }
+
+        function renderPlayer(player, currentPlayerId) {
+            const playerDiv = document.getElementById(`player${player.position}`);
+            if (!playerDiv) return;
+
+            const isCurrent = player.id === currentPlayerId;
+            
+            // Atualiza apenas a classe se mudou
+            const newClassName = `player-position ${['top', 'right', 'bottom', 'left'][player.position]}${isCurrent ? ' current' : ''}`;
+            if (playerDiv.className !== newClassName) {
+                playerDiv.className = newClassName;
+            }
+            
+            // Define o player ID se não existe
+            if (!playerDiv.getAttribute('data-player-id')) {
+                playerDiv.setAttribute('data-player-id', player.id);
+            }
+            
+            // Position do backend: 0=A1, 1=B1, 2=A2, 3=B2
+            // Posição visual: 0=top, 1=right, 2=bottom, 3=left
+            let teamLabel, playerNum;
+            if (player.position === 0) {
+                teamLabel = 'Time A';
+                playerNum = '1';
+            } else if (player.position === 1) {
+                teamLabel = 'Time B';
+                playerNum = '1';
+            } else if (player.position === 2) {
+                teamLabel = 'Time A';
+                playerNum = '2';
+            } else {
+                teamLabel = 'Time B';
+                playerNum = '2';
+            }
+
+            // Atualiza ou cria elementos apenas se necessário
+            let nameDiv = playerDiv.querySelector('.player-name');
+            if (!nameDiv) {
+                nameDiv = document.createElement('div');
+                nameDiv.className = 'player-name';
+                playerDiv.insertBefore(nameDiv, playerDiv.firstChild);
+            }
+            const nameText = player.name + (isCurrent ? ' 👈' : '');
+            if (nameDiv.textContent !== nameText) {
+                nameDiv.textContent = nameText;
+            }
+            
+            let teamDiv = playerDiv.querySelector('.team-label');
+            if (!teamDiv) {
+                teamDiv = document.createElement('div');
+                teamDiv.className = 'team-label';
+                playerDiv.insertBefore(teamDiv, nameDiv.nextSibling);
+            }
+            const teamText = `${teamLabel} - Jogador ${playerNum}`;
+            if (teamDiv.textContent !== teamText) {
+                teamDiv.textContent = teamText;
+            }
+
+            // Atualiza cartas apenas se mudaram
+            let cardsDiv = playerDiv.querySelector('.cards');
+            if (!cardsDiv) {
+                cardsDiv = document.createElement('div');
+                cardsDiv.className = 'cards';
+                // Insere antes das bolhas (se existirem)
+                const firstBubble = playerDiv.querySelector('.action-bubble, .comment-bubble');
+                if (firstBubble) {
+                    playerDiv.insertBefore(cardsDiv, firstBubble);
+                } else {
+                    playerDiv.appendChild(cardsDiv);
+                }
+            }
+            
+            // Verifica se as cartas mudaram
+            const currentCards = Array.from(cardsDiv.querySelectorAll('.card img')).map(img => img.alt);
+            const newCards = player.hand.map(card => card.name);
+            const cardsChanged = currentCards.length !== newCards.length || 
+                                currentCards.some((card, i) => card !== newCards[i]);
+            
+            if (cardsChanged) {
+                cardsDiv.innerHTML = '';
+                player.hand.forEach(card => {
+                    const cardDiv = document.createElement('div');
+                    cardDiv.className = 'card';
+                    cardDiv.appendChild(createCardElement(card));
+                    cardsDiv.appendChild(cardDiv);
+                });
+            }
+            
+            // Bolhas nunca são tocadas aqui - elas são gerenciadas apenas pelas funções show*Bubble
+        }
+
+        function renderMatchState(state) {
+            console.log('Renderizando estado:', state);
+
+            // Detecta ações antes de renderizar
+            detectActions(state);
+
+            // Placar
+            document.getElementById('scoreTeamA').textContent = state.matchScoreTeamA;
+            document.getElementById('scoreTeamB').textContent = state.matchScoreTeamB;
+            document.getElementById('turnScoreTeamA').textContent = state.turnScoreTeamA;
+            document.getElementById('turnScoreTeamB').textContent = state.turnScoreTeamB;
+            document.getElementById('reward').textContent = state.currentReward;
+            document.getElementById('state').textContent = state.state;
+            document.getElementById('currentTurn').textContent = state.currentTurn;
+
+            // Manilha
+            const manilhaDiv = document.getElementById('manilha');
+            manilhaDiv.innerHTML = '';
+            if (state.manilha) {
+                manilhaDiv.appendChild(createCardElement(state.manilha, 'manilha-card'));
+            }
+
+            // Jogadores
+            state.players.forEach(player => {
+                renderPlayer(player, state.currentPlayerId);
+            });
+
+            // Cartas jogadas - ordenadas: A1(top), B1(right), A2(bottom), B2(left)
+            const playedCardsDiv = document.getElementById('playedCards');
+            
+            // Só renderiza se houver cartas jogadas e não estiver em transição
+            if (state.playedCards.length > 0 && !showingTransition) {
+                // Verifica se é realmente um estado novo (não re-renderizar o mesmo)
+                const currentCardIds = state.playedCards.map(pc => pc.playerId + '-' + pc.card.rank + pc.card.suit).sort().join(',');
+                const existingCardIds = Array.from(playedCardsDiv.querySelectorAll('.played-card'))
+                    .map(el => el.dataset.cardId).sort().join(',');
+                
+                if (currentCardIds !== existingCardIds) {
+                    playedCardsDiv.innerHTML = '';
+                    
+                    // Ordena por posição: A1(0), B1(1), A2(2), B2(3)
+                    const sortedCards = [...state.playedCards]
+                        .map(played => ({
+                            played,
+                            player: state.players.find(p => p.id === played.playerId)
+                        }))
+                        .filter(item => item.player)
+                        .sort((a, b) => a.player.position - b.player.position);
+                    
+                    sortedCards.forEach(({ played, player }) => {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = `played-card pos-${['top', 'right', 'bottom', 'left'][player.position]}`;
+                        cardDiv.dataset.cardId = played.playerId + '-' + played.card.rank + played.card.suit;
+                        cardDiv.appendChild(createCardElement(played.card));
+                        playedCardsDiv.appendChild(cardDiv);
+                    });
+                }
+            } else if (showingTransition) {
+                // Durante transição, não re-renderiza mesmo que playedCards esteja populado
+                // As cartas já foram limpas pela animateCardsOut()
+            }
+
+            // Info jogador atual
+            const currentPlayerInfo = document.getElementById('currentPlayerInfo');
+            if (state.currentPlayerId) {
+                const player = state.players.find(p => p.id === state.currentPlayerId);
+                currentPlayerInfo.textContent = player ? `Vez de: ${player.name}` : '';
+            } else {
+                currentPlayerInfo.textContent = '';
+            }
+
+            document.getElementById('gameContent').classList.remove('hidden');
+            document.getElementById('loading').classList.add('hidden');
+        }
+
+        async function fetchMatchState() {
+            try {
+                const response = await fetch(`${API_BASE}/matches/${currentMatchId}/state`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Detecta se a partida terminou
+                    if (data.data.isFinished && !gameFinished) {
+                        gameFinished = true;
+                        showGameOver(data.data);
+                        stopPolling();
+                        return;
+                    }
+                    
+                    renderMatchState(data.data);
+                } else {
+                    showError(data.message);
+                    stopPolling();
+                }
+            } catch (error) {
+                console.error('Erro ao buscar estado:', error);
+                showError('Erro ao conectar com o servidor');
+            }
+        }
+
+        async function fetchComments() {
+            try {
+                const response = await fetch(`${API_BASE}/matches/${currentMatchId}/comments`);
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.length > 0) {
+                    // Processa cada comentário da fila
+                    data.data.forEach(comment => {
+                        console.log('💬 Comentário recebido:', comment);
+                        showCommentBubble(comment.playerId, comment.comment);
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao buscar comentários:', error);
+            }
+        }
+
+        function showGameOver(state) {
+            console.log('🏆 GAME OVER! Winner:', state.winnerTeam);
+            
+            // Para todos os pollings
+            stopPolling();
+            
+            // Toca som de vitória
+            if (state.winnerTeam === 'TeamA') {
+                playSound(sounds.winA);
+            } else if (state.winnerTeam === 'TeamB') {
+                playSound(sounds.winB);
+            }
+            
+            // Limpa cartas da mesa se houver
+            const playedCardsDiv = document.getElementById('playedCards');
+            playedCardsDiv.innerHTML = '';
+            
+            // Cria tela de fim de jogo
+            const gameOver = document.createElement('div');
+            gameOver.className = 'game-over-screen';
+            
+            const winnerTeamName = state.winnerTeam === 'TeamA' ? 'Time A' : 'Time B';
+            const winnerClass = state.winnerTeam === 'TeamA' ? 'team-a' : 'team-b';
+            
+            gameOver.innerHTML = `
+                <div class="game-over-content ${winnerClass}">
+                    <h1>🏆 FIM DE JOGO! 🏆</h1>
+                    <div class="winner-announcement">
+                        <div class="winner-text">${winnerTeamName} VENCEU!</div>
+                    </div>
+                    <div class="final-score">
+                        <div class="final-score-row">
+                            <span class="team-label">Time A:</span>
+                            <span class="score-value ${state.matchScoreTeamA >= 12 ? 'winner-score' : ''}">${state.matchScoreTeamA}</span>
+                        </div>
+                        <div class="final-score-divider">×</div>
+                        <div class="final-score-row">
+                            <span class="team-label">Time B:</span>
+                            <span class="score-value ${state.matchScoreTeamB >= 12 ? 'winner-score' : ''}">${state.matchScoreTeamB}</span>
+                        </div>
+                    </div>
+                    <div class="game-over-actions">
+                        <button onclick="location.reload()" class="btn btn-restart">Nova Partida</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(gameOver);
+        }
+
+        function startPolling() {
+            if (pollingInterval) return;
+            document.getElementById('stopBtn').classList.remove('hidden');
+            pollingInterval = setInterval(fetchMatchState, 1000);
+            commentsPollingInterval = setInterval(fetchComments, 500); // Polling mais rápido para comentários
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+            if (commentsPollingInterval) {
+                clearInterval(commentsPollingInterval);
+                commentsPollingInterval = null;
+            }
+            document.getElementById('stopBtn').classList.add('hidden');
+        }
+
+        async function loadMatch() {
+            const matchId = document.getElementById('matchIdInput').value.trim();
+            if (!matchId) {
+                showError('Digite um Match ID válido');
+                return;
+            }
+
+            // Reset estado
+            currentMatchId = matchId;
+            gameFinished = false;
+            lastState = null;
+            lastReward = 1;
+            lastPlayedCards = [];
+            lastTurnScoreA = 0;
+            lastTurnScoreB = 0;
+            lastTurn = 0;
+            showingTransition = false;
+            
+            // Remove tela de game over se existir
+            const oldGameOver = document.querySelector('.game-over-screen');
+            if (oldGameOver) {
+                oldGameOver.remove();
+            }
+            
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('error').classList.add('hidden');
+
+            await fetchMatchState();
+            startPolling();
+        }
+
+        // Carregar ao pressionar Enter
+        document.getElementById('matchIdInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadMatch();
+        });
+    </script>
+</body>
+</html>
